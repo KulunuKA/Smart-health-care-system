@@ -1,42 +1,43 @@
-import * as Joi from "joi";
-import { SERVER } from "../../config/environment";
-import { UserController } from "./userController";
-import { responseHandler } from "../../utils/ResponseHandler";   
+import { Router } from "express";
+import Joi from "joi";
+import { UserController } from "./userController.js";
+import { validateRequest } from "../../middleware/joiValidation.js";
 
+const router = Router();
 
-export const userRoute = [
-  {
-    method: "POST",
-    path: `${SERVER.API_BASE_URL}/user/signup`,
-    handler: async (request, response) => {
-      try {
-        const payload = request.payload;
+// Joi validation schema for user signup
+const signupSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .lowercase()
+    .email({ minDomainSegments: 2 })
+    .required()
+    .messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required'
+    }),
+  password: Joi.string()
+    .min(6)
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 6 characters long',
+      'any.required': 'Password is required'
+    }),
+  firstName: Joi.string()
+    .trim()
+    .required()
+    .messages({
+      'any.required': 'First name is required'
+    }),
+  lastName: Joi.string()
+    .trim()
+    .required()
+    .messages({
+      'any.required': 'Last name is required'
+    }),
+});
 
-        const result = await UserController.signUp(payload);
-        return responseHandler.sendSuccess(h, result);
-      } catch (error) {
-        return responseHandler.sendError(request, error);
-      }
-    },
-    options: {
-      tags: ["api", "user"],
-      description: "User SignUp without email verification",
-      auth: {
-        strategies: ["BasicAuth"],
-      },
-      validate: {
-        payload: Joi.object({
-          email: Joi.string()
-            .trim()
-            .lowercase()
-            .email({ minDomainSegments: 2 })
-            .regex(REGEX.EMAIL)
-            .default(SERVER.DEFAULT_EMAIL)
-            .required(),
-          password: Joi.string().min(6).required(),
-          name: Joi.string().trim().required(),
-        }),
-      },
-    },
-  },
-];
+// User signup route with Joi validation
+router.post("/user/signup", validateRequest(signupSchema), UserController.signUp);
+
+export { router as userRoute };

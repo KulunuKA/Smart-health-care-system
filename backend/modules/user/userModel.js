@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema({
   role: {
@@ -14,6 +14,16 @@ const userSchema = new mongoose.Schema({
     unique: true,
   },
   password: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  firstName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  lastName: {
     type: String,
     required: true,
     trim: true,
@@ -52,7 +62,8 @@ userSchema.statics.findByCredentials = async (email, password) => {
 
 userSchema.methods.generateAuthToken = async function () {
   const user = this;
-  const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
+  const secret = process.env.JWT_SECRET || "your-secret-key-here";
+  const token = jwt.sign({ _id: user._id.toString() }, secret);
   user.tokens = user.tokens.concat({ token });
   await user.save();
   return token;
@@ -60,4 +71,4 @@ userSchema.methods.generateAuthToken = async function () {
 
 const User = mongoose.model("User", userSchema);
 
-module.exports = User;
+export { User as UserModel };

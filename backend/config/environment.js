@@ -1,6 +1,6 @@
-const dotenv = require("dotenv");
-const fs = require("fs");
-const path = require("path");
+import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 const ENVIRONMENT = process.env.NODE_ENV.trim();
 
 export const SERVER = Object.freeze({
