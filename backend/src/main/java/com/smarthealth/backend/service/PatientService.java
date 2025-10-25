@@ -34,4 +34,10 @@ public class PatientService {
         throw new RuntimeException("Invalid email or password");
     }
 
+    public Patient getCurrentPatient(String email) {
+        return patientRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Patient not found for email: " + email));
+    }
+
+
 }
