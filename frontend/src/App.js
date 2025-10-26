@@ -23,6 +23,7 @@ import AdminAppointmentsPage from './pages/AdminAppointmentsPage';
 import AdminPatientManagementPage from './pages/AdminPatientManagementPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import UserDetailsPage from './pages/UserDetailsPage';
 
 // Components
 import Layout from './components/common/Layout';
@@ -89,6 +90,11 @@ function App() {
               <Route path="/admin/patients" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminPatientManagementPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/user-details/:userId" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <UserDetailsPage />
                 </ProtectedRoute>
               } />
               <Route path="/admin/doctors" element={

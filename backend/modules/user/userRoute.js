@@ -67,4 +67,7 @@ router.get("/doctors", UserController.getDoctors);
 // Get patients route
 router.get("/patients", UserController.getPatients);
 
+// Get user by ID route
+router.get("/user/:userId", UserController.getUserById);
+
 export { router as userRoute };

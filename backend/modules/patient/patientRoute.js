@@ -25,6 +25,11 @@ const medicalRecordSchema = Joi.object({
     .messages({
       'any.required': 'Description is required'
     }),
+  doctor: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Doctor is required'
+    }),
   diagnosis: Joi.string()
     .trim()
     .optional(),
@@ -66,6 +71,63 @@ const medicalRecordSchema = Joi.object({
     }))
     .optional(),
   followUpRequired: Joi.boolean().default(false),
+  followUpDate: Joi.date().optional(),
+  notes: Joi.string().trim().optional()
+});
+
+// Joi validation schema for updating medical records (all fields optional)
+const medicalRecordUpdateSchema = Joi.object({
+  recordType: Joi.string()
+    .valid('consultation', 'diagnosis', 'treatment', 'prescription', 'lab_result', 'vital_signs', 'allergy', 'medication', 'surgery', 'other')
+    .optional(),
+  title: Joi.string()
+    .trim()
+    .optional(),
+  description: Joi.string()
+    .optional(),
+  doctor: Joi.string()
+    .optional(),
+  diagnosis: Joi.string()
+    .trim()
+    .optional(),
+  symptoms: Joi.array()
+    .items(Joi.string().trim())
+    .optional(),
+  treatment: Joi.string()
+    .trim()
+    .optional(),
+  medications: Joi.array()
+    .items(Joi.object({
+      name: Joi.string().trim().required(),
+      dosage: Joi.string().trim().required(),
+      frequency: Joi.string().trim().required(),
+      duration: Joi.string().trim().required(),
+      instructions: Joi.string().trim().optional()
+    }))
+    .optional(),
+  vitalSigns: Joi.object({
+    bloodPressure: Joi.object({
+      systolic: Joi.number().min(0).max(300),
+      diastolic: Joi.number().min(0).max(200)
+    }).optional(),
+    heartRate: Joi.number().min(0).max(300).optional(),
+    temperature: Joi.number().min(30).max(45).optional(),
+    respiratoryRate: Joi.number().min(0).max(60).optional(),
+    oxygenSaturation: Joi.number().min(0).max(100).optional(),
+    weight: Joi.number().min(0).max(500).optional(),
+    height: Joi.number().min(0).max(300).optional(),
+    bmi: Joi.number().min(0).max(100).optional()
+  }).optional(),
+  labResults: Joi.array()
+    .items(Joi.object({
+      testName: Joi.string().trim().required(),
+      result: Joi.string().trim().required(),
+      normalRange: Joi.string().trim().optional(),
+      unit: Joi.string().trim().optional(),
+      status: Joi.string().valid('normal', 'abnormal', 'critical').default('normal')
+    }))
+    .optional(),
+  followUpRequired: Joi.boolean().optional(),
   followUpDate: Joi.date().optional(),
   notes: Joi.string().trim().optional()
 });
@@ -133,7 +195,7 @@ router.get("/:patientId/history", PatientController.getMedicalHistory);
 router.post("/:patientId/records", validateRequest(medicalRecordSchema), PatientController.addMedicalRecord);
 
 // Update medical record entry
-router.put("/:patientId/records/:recordId", validateRequest(medicalRecordSchema), PatientController.updateMedicalRecord);
+router.put("/:patientId/records/:recordId", validateRequest(medicalRecordUpdateSchema), PatientController.updateMedicalRecord);
 
 // Delete medical record entry
 router.delete("/:patientId/records/:recordId", PatientController.deleteMedicalRecord);

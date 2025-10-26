@@ -285,6 +285,81 @@ class AppointmentService {
   }
 
   /**
+   * Get user by ID
+   * @param {string} userId - User ID
+   * @returns {Promise<object>} - User details
+   */
+  async getUserById(userId) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/user/${userId}`
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch user details');
+    }
+  }
+
+  /**
+   * Get medical history for a patient
+   * @param {string} patientId - Patient ID
+   * @param {object} filters - Filter parameters
+   * @returns {Promise<object>} - Medical history
+   */
+  async getMedicalHistory(patientId, filters = {}) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/${patientId}/history`,
+        { params: filters }
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch medical history');
+    }
+  }
+
+  /**
+   * Add medical record for a patient
+   * @param {string} patientId - Patient ID
+   * @param {object} recordData - Medical record data
+   * @returns {Promise<object>} - Added medical record
+   */
+  async addMedicalRecord(patientId, recordData) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/${patientId}/records`,
+        recordData
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to add medical record');
+    }
+  }
+
+  /**
+   * Update medical record for a patient
+   * @param {string} patientId - Patient ID
+   * @param {string} recordId - Medical record ID
+   * @param {object} updateData - Medical record update data
+   * @returns {Promise<object>} - Updated medical record
+   */
+  async updateMedicalRecord(patientId, recordId, updateData) {
+    try {
+      const response = await axios.put(
+        `${this.baseURL}/${patientId}/records/${recordId}`,
+        updateData
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update medical record');
+    }
+  }
+
+  /**
    * Get appointment statistics (Admin only)
    * @param {object} filters - Filter parameters
    * @returns {Promise<object>} - Appointment statistics
