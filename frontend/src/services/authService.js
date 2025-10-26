@@ -56,10 +56,12 @@ class AuthService {
         credentials
       );
       
+      // Handle the backend response format
+      const { data } = response.data;
+      
       return {
-        user: response.data.user,
-        token: response.data.token,
-        role: response.data.user.role
+        user: data.user,
+        token: data.accessToken
       };
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed');

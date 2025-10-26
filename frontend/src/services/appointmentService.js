@@ -37,7 +37,7 @@ class AppointmentService {
   async getUserAppointments(userId, filters = {}) {
     try {
       const response = await axios.get(
-        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.BASE}/user/${userId}`,
+        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.USER}/${userId}`,
         { params: filters }
       );
       

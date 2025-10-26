@@ -116,8 +116,35 @@ const DashboardPage = () => {
           ]
         };
       
+    
+        return {
+          ...baseData,
+          stats: [
+            { title: 'My Orders', value: '3', change: '+1', changeType: 'positive', icon: Calendar },
+            { title: 'Account Balance', value: '$150', change: '+$25', changeType: 'positive', icon: CreditCard },
+            { title: 'Support Tickets', value: '1', change: '0', changeType: 'neutral', icon: Bell },
+            { title: 'Account Status', value: 'Active', change: '100%', changeType: 'positive', icon: CheckCircle }
+          ],
+          welcomeMessage: `Welcome back, ${user?.name || 'Customer'}! Here's your account overview.`,
+          quickActions: [
+            { title: 'Place Order', description: 'Start a new order', icon: Calendar, color: 'primary' },
+            { title: 'Order History', description: 'View past orders', icon: FileText, color: 'secondary' },
+            { title: 'Account Settings', description: 'Manage your account', icon: Users, color: 'accent' },
+            { title: 'Support', description: 'Get help and support', icon: Bell, color: 'primary' }
+          ]
+        };
+      
       default:
-        return baseData;
+        return {
+          ...baseData,
+          welcomeMessage: `Welcome back, ${user?.name || 'User'}! Here's your overview.`,
+          quickActions: [
+            { title: 'View Dashboard', description: 'Check your overview', icon: TrendingUp, color: 'primary' },
+            { title: 'Settings', description: 'Manage your account', icon: AlertCircle, color: 'secondary' },
+            { title: 'Help', description: 'Get support', icon: Bell, color: 'accent' },
+            { title: 'Profile', description: 'Update your information', icon: Users, color: 'primary' }
+          ]
+        };
     }
   };
 
@@ -182,7 +209,7 @@ const DashboardPage = () => {
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {dashboardData.quickActions.map((action, index) => {
+                {dashboardData.quickActions?.map((action, index) => {
                   const Icon = action.icon;
                   const colorClasses = {
                     primary: 'bg-primary-100 text-primary-600',
