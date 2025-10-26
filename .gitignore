@@ -12,8 +12,15 @@ dist/
 .cache/
 */cache/
 */.cache/
+**/.cache/
+**/node_modules/.cache/
 frontend/node_modules/.cache/
 backend/node_modules/.cache/
+
+# Webpack cache files
+**/node_modules/.cache/default-development/
+**/node_modules/.cache/babel-loader/
+**/node_modules/.cache/.eslintcache
 
 # Environment variables
 .env
