@@ -102,7 +102,26 @@ export class PatientController {
         return responseHandler.sendError(res, "Invalid patient ID", 400);
       }
 
-      const history = await PatientDao.getMedicalHistory(patientId, filters);
+      // First, check if a PatientModel record exists for this user
+      // We need to find PatientModel by the 'user' field, not by _id
+      let patient = await PatientDao.getPatientByUserId(patientId);
+      
+      if (!patient) {
+        // If no PatientModel exists, check if user exists and return empty history
+        const user = await UserModel.findById(patientId);
+        if (!user) {
+          return responseHandler.sendNotFound(res, "User not found");
+        }
+
+        if (user.role !== 'Patient') {
+          return responseHandler.sendError(res, "User is not a patient", 400);
+        }
+
+        // Return empty medical history for users without PatientModel records
+        return responseHandler.sendSuccess(res, [], "Medical history retrieved successfully");
+      }
+
+      const history = await PatientDao.getMedicalHistory(patient._id, filters);
 
       return responseHandler.sendSuccess(res, history, "Medical history retrieved successfully");
     } catch (error) {
@@ -129,10 +148,68 @@ export class PatientController {
         return responseHandler.sendError(res, "Invalid patient ID", 400);
       }
 
-      // Add doctor ID from authenticated user
-      recordData.doctor = req.user.id;
+      // Use doctor ID from request body (sent by frontend)
+      // The doctor field should already be in recordData from the request body
 
-      const updatedPatient = await PatientDao.addMedicalRecord(patientId, recordData, session);
+      // First, check if a PatientModel record exists for this user
+      // We need to find PatientModel by the 'user' field, not by _id
+      let patient = await PatientDao.getPatientByUserId(patientId);
+      
+      if (!patient) {
+        // If no PatientModel exists, create one from the UserModel
+        const user = await UserModel.findById(patientId);
+        if (!user) {
+          await session.abortTransaction();
+          session.endSession();
+          return responseHandler.sendNotFound(res, "User not found");
+        }
+
+        if (user.role !== 'Patient') {
+          await session.abortTransaction();
+          session.endSession();
+          return responseHandler.sendError(res, "User is not a patient", 400);
+        }
+
+        // Create a basic PatientModel record
+        const patientData = {
+          user: patientId,
+          healthCardNumber: `HC${Date.now()}`, // Generate a temporary health card number
+          dateOfBirth: user.dateOfBirth || new Date('1990-01-01'),
+          gender: user.gender || 'other',
+          phone: user.phone || 'Not provided',
+          address: {
+            street: user.address?.street || 'Not provided',
+            city: user.address?.city || 'Not provided',
+            state: user.address?.state || 'Not provided',
+            zipCode: user.address?.zipCode || '00000',
+            country: user.address?.country || 'Sri Lanka'
+          },
+          emergencyContact: {
+            name: user.emergencyContact?.name || 'Not provided',
+            relationship: user.emergencyContact?.relationship || 'Not provided',
+            phone: user.emergencyContact?.phone || 'Not provided',
+            email: user.emergencyContact?.email || ''
+          },
+          insurance: user.insurance || {
+            provider: '',
+            policyNumber: '',
+            groupNumber: '',
+            expiryDate: null
+          },
+          medicalHistory: [],
+          allergies: [],
+          currentMedications: [],
+          vitalSigns: {},
+          documents: []
+        };
+
+        console.log('Creating PatientModel record for user:', user.email);
+
+        const createdPatient = await PatientDao.createPatient(patientData, session);
+        patient = createdPatient[0];
+      }
+
+      const updatedPatient = await PatientDao.addMedicalRecord(patient._id, recordData, session);
 
       if (!updatedPatient) {
         await session.abortTransaction();

@@ -302,6 +302,44 @@ class AppointmentService {
   }
 
   /**
+   * Get medical history for a patient
+   * @param {string} patientId - Patient ID
+   * @param {object} filters - Filter parameters
+   * @returns {Promise<object>} - Medical history
+   */
+  async getMedicalHistory(patientId, filters = {}) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/${patientId}/history`,
+        { params: filters }
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch medical history');
+    }
+  }
+
+  /**
+   * Add medical record for a patient
+   * @param {string} patientId - Patient ID
+   * @param {object} recordData - Medical record data
+   * @returns {Promise<object>} - Added medical record
+   */
+  async addMedicalRecord(patientId, recordData) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/${patientId}/records`,
+        recordData
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to add medical record');
+    }
+  }
+
+  /**
    * Get appointment statistics (Admin only)
    * @param {object} filters - Filter parameters
    * @returns {Promise<object>} - Appointment statistics

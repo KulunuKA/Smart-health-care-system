@@ -25,6 +25,11 @@ const medicalRecordSchema = Joi.object({
     .messages({
       'any.required': 'Description is required'
     }),
+  doctor: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Doctor is required'
+    }),
   diagnosis: Joi.string()
     .trim()
     .optional(),
