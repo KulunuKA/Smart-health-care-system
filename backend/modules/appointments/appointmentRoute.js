@@ -46,4 +46,8 @@ router.put("/appointments/:appointmentId", AppointmentController.updateAppointme
 // Cancel appointment route
 router.delete("/appointments/:appointmentId", AppointmentController.cancelAppointment);
 
+// Admin routes
+router.get("/admin/appointments", AppointmentController.getAllAppointments);
+router.get("/admin/appointments/stats", AppointmentController.getAppointmentStats);
+
 export { router as appointmentRoute };

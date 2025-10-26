@@ -240,6 +240,122 @@ export class AppointmentController {
     }
   }
 
+  static async getAllAppointments(req, res) {
+    try {
+      const { status, date, doctorId, userId, page = 1, limit = 10 } = req.query;
+      
+      let filter = {};
+      
+      if (status) filter.status = status;
+      if (date) filter.date = new Date(date);
+      if (doctorId) filter.doctorId = doctorId;
+      if (userId) filter.userId = userId;
+
+      const skip = (page - 1) * limit;
+
+      const appointments = await AppointmentModel.find(filter)
+        .populate('userId', 'firstName lastName email role')
+        .populate('doctorId', 'firstName lastName email role specialty')
+        .populate('billId')
+        .sort({ date: -1, time: 1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+      // Get total count for pagination
+      const totalCount = await AppointmentModel.countDocuments(filter);
+
+      const result = {
+        appointments,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalCount / limit),
+          totalCount,
+          hasNext: page * limit < totalCount,
+          hasPrev: page > 1
+        }
+      };
+
+      return responseHandler.sendSuccess(res, result, "All appointments retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching all appointments:", error);
+      return responseHandler.sendError(res, error);
+    }
+  }
+
+  static async getAppointmentStats(req, res) {
+    try {
+      const { dateRange } = req.query;
+      
+      let dateFilter = {};
+      if (dateRange) {
+        const [startDate, endDate] = dateRange.split(',');
+        if (startDate && endDate) {
+          dateFilter.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          };
+        }
+      }
+
+      const stats = await AppointmentModel.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Get total appointments
+      const totalAppointments = await AppointmentModel.countDocuments(dateFilter);
+
+      // Get appointments by doctor
+      const doctorStats = await AppointmentModel.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: '$doctorId',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'doctor'
+          }
+        },
+        {
+          $unwind: '$doctor'
+        },
+        {
+          $project: {
+            doctorName: { $concat: ['$doctor.firstName', ' ', '$doctor.lastName'] },
+            count: 1
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ]);
+
+      const result = {
+        totalAppointments,
+        statusBreakdown: stats.reduce((acc, stat) => {
+          acc[stat._id] = stat.count;
+          return acc;
+        }, {}),
+        topDoctors: doctorStats
+      };
+
+      return responseHandler.sendSuccess(res, result, "Appointment statistics retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching appointment statistics:", error);
+      return responseHandler.sendError(res, error);
+    }
+  }
+
   static async cancelAppointment(req, res) {
     const session = await mongoose.startSession();
     session.startTransaction();

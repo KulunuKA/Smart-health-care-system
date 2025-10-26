@@ -29,20 +29,37 @@ const LoginPage = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/dashboard';
+    if (isAuthenticated && user) {
+      // Role-based redirection
+      let redirectPath = '/dashboard';
+      
+      if (user.role === 'admin') {
+        redirectPath = '/admin';
+      } else if (user.role === 'doctor') {
+        redirectPath = '/dashboard';
+      } else if (user.role === 'patient') {
+        redirectPath = '/dashboard';
+      }
+      
+      const from = location.state?.from?.pathname || redirectPath;
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, user, navigate, location]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     
     try {
+      // Use regular login for all users - backend will handle role validation
       const result = await login(data);
       
       if (result.success) {
-        showSuccess('Login successful! Welcome back.');
+        // Determine success message based on user role
+        const userRole = result.user?.role || 'user';
+        const roleMessage = userRole === 'admin' ? 'Admin login successful! Welcome back.' : 'Login successful! Welcome back.';
+        showSuccess(roleMessage);
+        
+        // Role-based redirection will be handled by useEffect
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {
@@ -197,9 +214,9 @@ const LoginPage = () => {
                 <span>Doctor:</span>
                 <span>doctor@demo.com / password123</span>
               </div>
-              <div className="flex justify-between">
-                <span>Admin:</span>
-                <span>admin@demo.com / password123</span>
+              <div className="flex justify-between bg-yellow-50 p-2 rounded border-l-4 border-yellow-400">
+                <span className="font-medium text-yellow-800">Admin:</span>
+                <span className="font-medium text-yellow-800">admin@demo.com / password123</span>
               </div>
             </div>
           </div>

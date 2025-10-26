@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
+import { authService } from '../services/authService';
 import { 
   Shield, 
   Users, 
@@ -15,7 +17,9 @@ import {
   FileText,
   UserPlus,
   Trash2,
-  Edit
+  Edit,
+  Calendar,
+  Stethoscope
 } from 'lucide-react';
 import Card, { StatCard } from '../components/common/Card';
 import Loader from '../components/common/Loader';
@@ -34,6 +38,12 @@ const AdminPage = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [newPatient, setNewPatient] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: ''
+  });
 
   useEffect(() => {
     fetchAdminData();
@@ -175,6 +185,48 @@ const AdminPage = () => {
     }
   };
 
+  const handleAddPatient = async () => {
+    try {
+      const patientData = {
+        ...newPatient,
+        role: 'Patient' // Always set role to Patient
+      };
+      
+      console.log('Sending patient data:', patientData);
+      
+      const response = await authService.signUp(patientData);
+      
+      console.log('Backend response:', response);
+      
+      // Add the new patient to the local state
+      const addedPatient = {
+        id: response.user._id,
+        name: `${response.user.firstName} ${response.user.lastName}`,
+        email: response.user.email,
+        role: 'patient',
+        status: 'active',
+        department: null,
+        lastLogin: new Date().toISOString()
+      };
+      
+      setUsers(prev => [...prev, addedPatient]);
+      setShowUserModal(false);
+      setNewPatient({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: ''
+      });
+      
+      // Show success message
+      console.log('Patient added successfully:', addedPatient);
+      alert('Patient added successfully!');
+    } catch (error) {
+      console.error('Error adding patient:', error);
+      alert('Error adding patient: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -184,8 +236,7 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -210,6 +261,54 @@ const AdminPage = () => {
             })}
           </div>
         )}
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link to="/admin/appointments" className="group">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Appointments</h3>
+                    <p className="text-sm text-gray-600">Manage all appointments</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+
+            <Link to="/admin/patients" className="group">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                    <Users className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Patient Management</h3>
+                    <p className="text-sm text-gray-600">Manage all registered patients</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+
+            <Link to="/admin/doctors" className="group">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                    <Stethoscope className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Doctor Management</h3>
+                    <p className="text-sm text-gray-600">Manage doctor profiles</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* System Health */}
@@ -258,13 +357,13 @@ const AdminPage = () => {
           {/* User Management */}
           <Card className="p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Patient Management</h3>
               <button
                 onClick={() => setShowUserModal(true)}
                 className="btn-primary flex items-center"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Add User
+                Add Patient
               </button>
             </div>
             
@@ -340,16 +439,20 @@ const AdminPage = () => {
           </Card>
         </div>
 
-        {/* Add/Edit User Modal */}
-        <FormModal
+        {/* Add Patient Modal */}
+        <Modal
           isOpen={showUserModal}
-          onClose={() => setShowUserModal(false)}
-          onSubmit={(data) => {
-            console.log('Save user:', data);
+          onClose={() => {
             setShowUserModal(false);
             setSelectedUser(null);
+            setNewPatient({
+              firstName: '',
+              lastName: '',
+              email: '',
+              password: ''
+            });
           }}
-          title={selectedUser ? 'Edit User' : 'Add New User'}
+          title="Add New Patient"
           size="lg"
         >
           <div className="space-y-4">
@@ -359,7 +462,10 @@ const AdminPage = () => {
                 <input 
                   type="text" 
                   className="input-field" 
-                  defaultValue={selectedUser?.name?.split(' ')[0] || ''}
+                  value={newPatient.firstName}
+                  onChange={(e) => setNewPatient(prev => ({ ...prev, firstName: e.target.value }))}
+                  placeholder="Enter first name"
+                  required
                 />
               </div>
               <div>
@@ -367,54 +473,65 @@ const AdminPage = () => {
                 <input 
                   type="text" 
                   className="input-field" 
-                  defaultValue={selectedUser?.name?.split(' ')[1] || ''}
+                  value={newPatient.lastName}
+                  onChange={(e) => setNewPatient(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Enter last name"
+                  required
                 />
               </div>
             </div>
             
             <div>
-              <label className="label">Email</label>
+              <label className="label">Email Address</label>
               <input 
                 type="email" 
                 className="input-field" 
-                defaultValue={selectedUser?.email || ''}
+                value={newPatient.email}
+                onChange={(e) => setNewPatient(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+                required
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Role</label>
-                <select className="input-field" defaultValue={selectedUser?.role || ''}>
-                  <option value="">Select Role</option>
-                  <option value="admin">Administrator</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="staff">Staff</option>
-                  <option value="patient">Patient</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Status</label>
-                <select className="input-field" defaultValue={selectedUser?.status || 'active'}>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-            </div>
-            
             <div>
-              <label className="label">Department</label>
-              <select className="input-field" defaultValue={selectedUser?.department || ''}>
-                <option value="">Select Department</option>
-                <option value="Cardiology">Cardiology</option>
-                <option value="Pediatrics">Pediatrics</option>
-                <option value="General Medicine">General Medicine</option>
-                <option value="Emergency">Emergency</option>
-                <option value="Administration">Administration</option>
-              </select>
+              <label className="label">Password</label>
+              <input 
+                type="password" 
+                className="input-field" 
+                value={newPatient.password}
+                onChange={(e) => setNewPatient(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Minimum 6 characters"
+                required
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                onClick={() => {
+                  setShowUserModal(false);
+                  setSelectedUser(null);
+                  setNewPatient({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    password: ''
+                  });
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddPatient}
+                className="btn-primary"
+                disabled={!newPatient.firstName || !newPatient.lastName || !newPatient.email || !newPatient.password}
+              >
+                Add Patient
+              </button>
             </div>
           </div>
-        </FormModal>
+        </Modal>
 
         {/* Delete User Confirmation Modal */}
         <ConfirmationModal
@@ -426,7 +543,6 @@ const AdminPage = () => {
           confirmText="Delete User"
           confirmVariant="danger"
         />
-      </div>
     </div>
   );
 };
