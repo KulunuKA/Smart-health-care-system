@@ -29,6 +29,12 @@ const signupSchema = Joi.object({
   lastName: Joi.string().trim().required().messages({
     "any.required": "Last name is required",
   }),
+  role: Joi.string()
+    .valid('Patient', 'Doctor', 'Admin', 'Customer')
+    .default('Patient')
+    .messages({
+      'any.only': 'Role must be one of: Patient, Doctor, Admin, Customer'
+    }),
 });
 
 // User signup route with Joi validation
