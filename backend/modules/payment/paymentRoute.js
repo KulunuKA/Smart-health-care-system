@@ -10,11 +10,26 @@ const paymentSchema = Joi.object({
   billId: Joi.string().required().messages({
     "any.required": "Bill ID is required",
   }),
-  paymentMethod: Joi.string().valid("card", "bank", "wallet").required().messages({
+  paymentMethod: Joi.string().valid("card", "bank", "wallet", "stripe").required().messages({
     "any.required": "Payment method is required",
   }),
   amount: Joi.number().positive().optional(),
   paymentDetails: Joi.object().optional(),
+});
+
+// Joi validation schema for Stripe Checkout
+const checkoutSchema = Joi.object({
+  amount: Joi.number().positive().required().messages({
+    "any.required": "Amount is required",
+  }),
+  productName: Joi.string().required().messages({
+    "any.required": "Product name is required",
+  }),
+  billId: Joi.string().optional(),
+  userId: Joi.string().optional(),
+  doctorId: Joi.string().optional(),
+  appointmentId: Joi.string().optional(),
+  customerEmail: Joi.string().email().optional(),
 });
 
 // Get unpaid bills route
@@ -44,5 +59,14 @@ router.post("/payments/create-intent", PaymentController.createPaymentIntent);
 
 // Confirm payment route
 router.post("/payments/confirm", PaymentController.confirmPayment);
+
+// Stripe Checkout routes
+router.post(
+  "/payments/create-checkout-session",
+  validateRequest(checkoutSchema),
+  PaymentController.createCheckoutSession
+);
+
+router.get("/payments/checkout-success", PaymentController.handleCheckoutSuccess);
 
 export { router as paymentRoute };

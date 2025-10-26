@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { MESSAGES } from "../../config/constants.js";
 import { AppointmentModel } from "./appointmentModel.js";
 import { UserModel } from "../user/userModel.js";
-import { BillModel } from "../bill/billModel.js";
+import { BillModel } from "../payment/billModel.js";
 import { responseHandler } from "../../utils/ResponseHandler.js";
 
 export class AppointmentController {

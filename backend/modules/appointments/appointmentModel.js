@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { BillModel } from "../bill/billModel.js";
 
 const appointmentSchema = new mongoose.Schema({
   userId: {

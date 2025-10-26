@@ -175,7 +175,7 @@ export const FormModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title={title} {...props}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {children}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        {/* <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={onClose}
@@ -191,7 +191,7 @@ export const FormModal = ({
           >
             {isLoading ? 'Submitting...' : submitText}
           </button>
-        </div>
+        </div> */}
       </form>
     </Modal>
   );
