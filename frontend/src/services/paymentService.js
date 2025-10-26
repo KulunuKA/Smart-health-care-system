@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../utils/constants';
+import { STRIPE_CONFIG, TEST_CARDS } from '../config/stripe';
 
 /**
  * Payment Service
@@ -272,6 +273,40 @@ class PaymentService {
       await axios.delete(`${this.baseURL}/payments/plans/${planId}`);
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to cancel payment plan');
+    }
+  }
+
+  /**
+   * Create Stripe payment intent
+   * @param {string} billId - Bill ID
+   * @returns {Promise<Object>} Payment intent data
+   */
+  async createPaymentIntent(billId) {
+    try {
+      const response = await axios.post(`${this.baseURL}/payments/create-intent`, {
+        billId
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create payment intent');
+    }
+  }
+
+  /**
+   * Confirm Stripe payment
+   * @param {string} paymentIntentId - Payment intent ID
+   * @param {string} billId - Bill ID
+   * @returns {Promise<Object>} Payment confirmation data
+   */
+  async confirmPayment(paymentIntentId, billId) {
+    try {
+      const response = await axios.post(`${this.baseURL}/payments/confirm`, {
+        paymentIntentId,
+        billId
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to confirm payment');
     }
   }
 }

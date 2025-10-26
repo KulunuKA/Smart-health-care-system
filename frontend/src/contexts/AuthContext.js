@@ -35,91 +35,18 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Mock authentication - simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use real API authentication
+      const response = await authService.login(credentials);
       
-      // Mock user data based on email
-      const mockUsers = {
-        'patient@demo.com': {
-          id: 1,
-          name: 'John Doe',
-          email: 'patient@demo.com',
-          role: 'patient',
-          department: null
-        },
-        'doctor@demo.com': {
-          id: 2,
-          name: 'Dr. Sarah Johnson',
-          email: 'doctor@demo.com',
-          role: 'doctor',
-          department: 'Cardiology'
-        },
-        'admin@demo.com': {
-          id: 3,
-          name: 'Admin User',
-          email: 'admin@demo.com',
-          role: 'admin',
-          department: 'Administration'
-        },
-        'staff@demo.com': {
-          id: 4,
-          name: 'Jane Smith',
-          email: 'staff@demo.com',
-          role: 'staff',
-          department: 'General Medicine'
-        },
-        'manager@demo.com': {
-          id: 5,
-          name: 'Mike Wilson',
-          email: 'manager@demo.com',
-          role: 'manager',
-          department: 'Management'
-        }
-      };
-      
-      const user = mockUsers[credentials.email];
-      
-      console.log('Login attempt:', { 
-        email: credentials.email, 
-        password: credentials.password,
-        emailTrimmed: credentials.email?.trim(),
-        passwordTrimmed: credentials.password?.trim()
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: response
       });
-      console.log('Available users:', Object.keys(mockUsers));
-      console.log('Found user:', user);
       
-      // Check for exact email match (case-insensitive and trimmed)
-      const emailMatch = Object.keys(mockUsers).find(key => 
-        key.toLowerCase() === credentials.email?.toLowerCase()?.trim()
-      );
-      const matchedUser = emailMatch ? mockUsers[emailMatch] : null;
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       
-      console.log('Email match:', emailMatch);
-      console.log('Matched user:', matchedUser);
-      
-      if (matchedUser && credentials.password?.trim() === 'password123') {
-        const response = {
-          user: matchedUser,
-          token: 'mock-jwt-token-' + matchedUser.id
-        };
-        
-        dispatch({
-          type: 'LOGIN_SUCCESS',
-          payload: response
-        });
-        
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        
-        return { success: true };
-      } else {
-        console.log('Authentication failed:', {
-          hasUser: !!matchedUser,
-          passwordMatch: credentials.password?.trim() === 'password123',
-          actualPassword: credentials.password?.trim()
-        });
-        throw new Error('Invalid email or password');
-      }
+      return { success: true };
     } catch (error) {
       dispatch({
         type: 'LOGIN_ERROR',
@@ -131,8 +58,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Mock logout - no API call needed
-      console.log('User logged out successfully');
+      // Use real API logout
+      await authService.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

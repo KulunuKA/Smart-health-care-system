@@ -1,7 +1,7 @@
 import { Router } from "express";
 import Joi from "joi";
 import { UserController } from "./userController.js";
-import { validateRequest } from "../../middleware/joiValidation.js";
+import { validateRequest, loginSchema } from "../../middleware/joiValidation.js";
 
 const router = Router();
 
@@ -37,5 +37,18 @@ router.post(
   validateRequest(signupSchema),
   UserController.signUp
 );
+
+// User login route with Joi validation
+router.post(
+  "/user/login",
+  validateRequest(loginSchema),
+  UserController.login
+);
+
+// User logout route
+router.post("/user/logout", UserController.logout);
+
+// Get doctors route
+router.get("/doctors", UserController.getDoctors);
 
 export { router as userRoute };
