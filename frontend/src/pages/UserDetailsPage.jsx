@@ -41,10 +41,18 @@ const UserDetailsPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editData, setEditData] = useState({});
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   useEffect(() => {
     fetchUserDetails();
   }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === 'appointments' && userId) {
+      fetchUserAppointments();
+    }
+  }, [activeTab, userId]);
 
   const fetchUserDetails = async () => {
     setLoading(true);
@@ -86,7 +94,6 @@ const UserDetailsPage = () => {
         medicalHistory: userData.medicalHistory || [],
         allergies: userData.allergies || [],
         medications: userData.medications || [],
-        appointments: userData.appointments || [],
         vitalSigns: userData.vitalSigns || {
           bloodPressure: { systolic: 0, diastolic: 0 },
           heartRate: 0,
@@ -105,6 +112,34 @@ const UserDetailsPage = () => {
       setUserDetails(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserAppointments = async () => {
+    setAppointmentsLoading(true);
+    try {
+      const response = await appointmentService.getUserAppointments(userId);
+      console.log('Fetched user appointments response:', response);
+      
+      // Transform the appointments data to match our frontend format
+      const transformedAppointments = response.data.map(appointment => ({
+        id: appointment._id,
+        date: appointment.date,
+        time: appointment.time,
+        doctor: appointment.doctorId ? `${appointment.doctorId.firstName} ${appointment.doctorId.lastName}` : 'Unknown Doctor',
+        type: appointment.reason || 'General Consultation',
+        status: appointment.status || 'Scheduled',
+        reason: appointment.reason,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt
+      }));
+
+      setAppointments(transformedAppointments);
+    } catch (error) {
+      console.error('Failed to fetch user appointments:', error);
+      setAppointments([]);
+    } finally {
+      setAppointmentsLoading(false);
     }
   };
 
@@ -390,34 +425,115 @@ const UserDetailsPage = () => {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Appointments</h3>
-              <button className="btn-primary flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Schedule Appointment
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={fetchUserAppointments}
+                  className="btn-secondary flex items-center gap-2"
+                  disabled={appointmentsLoading}
+                >
+                  <Clock className="w-5 h-5" />
+                  Refresh
+                </button>
+                <button className="btn-primary flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Schedule Appointment
+                </button>
+              </div>
             </div>
-            <div className="space-y-4">
-              {userDetails.appointments.map((appointment) => (
-                <div key={appointment.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{appointment.type}</h4>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                      {appointment.status}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
+            
+            {/* Appointment Statistics */}
+            {appointments.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <Calendar className="w-8 h-8 text-blue-600 mr-3" />
                     <div>
-                      <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p><strong>Time:</strong> {appointment.time}</p>
-                    </div>
-                    <div>
-                      <p><strong>Doctor:</strong> {appointment.doctor}</p>
+                      <p className="text-sm text-blue-600">Total</p>
+                      <p className="text-2xl font-bold text-blue-900">{appointments.length}</p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <CheckCircle className="w-8 h-8 text-green-600 mr-3" />
+                    <div>
+                      <p className="text-sm text-green-600">Completed</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {appointments.filter(apt => apt.status === 'completed').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <Clock className="w-8 h-8 text-yellow-600 mr-3" />
+                    <div>
+                      <p className="text-sm text-yellow-600">Scheduled</p>
+                      <p className="text-2xl font-bold text-yellow-900">
+                        {appointments.filter(apt => apt.status === 'scheduled').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <CheckCircle className="w-8 h-8 text-purple-600 mr-3" />
+                    <div>
+                      <p className="text-sm text-purple-600">Confirmed</p>
+                      <p className="text-2xl font-bold text-purple-900">
+                        {appointments.filter(apt => apt.status === 'confirmed').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {appointmentsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader size="md" text="Loading appointments..." />
+              </div>
+            ) : appointments.length > 0 ? (
+              <div className="space-y-4">
+                {appointments.map((appointment) => (
+                  <div key={appointment.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">{appointment.type}</h4>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
+                        {appointment.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div>
+                        <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p><strong>Time:</strong> {appointment.time}</p>
+                      </div>
+                      <div>
+                        <p><strong>Doctor:</strong> {appointment.doctor}</p>
+                      </div>
+                    </div>
+                    {appointment.reason && (
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-700"><strong>Reason:</strong> {appointment.reason}</p>
+                      </div>
+                    )}
+                    {appointment.notes && (
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-700"><strong>Notes:</strong> {appointment.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
+                <p className="text-gray-500">This user has no appointments scheduled.</p>
+              </div>
+            )}
           </Card>
         )}
 

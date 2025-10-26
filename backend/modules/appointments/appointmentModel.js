@@ -29,6 +29,10 @@ const appointmentSchema = new mongoose.Schema({
     required: true,
     enum: ["scheduled", "confirmed", "cancelled", "completed"],
   },
+  notes: {
+    type: String,
+    required: false,
+  },
   billId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Bill",
