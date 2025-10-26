@@ -56,6 +56,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   const logout = async () => {
     try {
       // Use real API logout

@@ -19,10 +19,11 @@ import PaymentsPage from './pages/PaymentsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import AdminPage from './pages/AdminPage';
+import AdminAppointmentsPage from './pages/AdminAppointmentsPage';
+import AdminPatientManagementPage from './pages/AdminPatientManagementPage';
 
 // Components
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
+import Layout from './components/common/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 /**
@@ -34,68 +35,84 @@ function App() {
     <AuthProvider>
       <NotificationProvider>
         <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <main className="min-h-screen">
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/appointments" element={
-                  <ProtectedRoute>
-                    <AppointmentsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/records" element={
-                  <ProtectedRoute>
-                    <RecordsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/payments" element={
-                  <ProtectedRoute>
-                    <PaymentsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/reports" element={
-                  <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                    <ReportsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/notifications" element={
-                  <ProtectedRoute>
-                    <NotificationsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminPage />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </main>
-            <Footer />
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
-          </div>
+          <Layout>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected Routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/appointments" element={
+                <ProtectedRoute>
+                  <AppointmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/records" element={
+                <ProtectedRoute>
+                  <RecordsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/payments" element={
+                <ProtectedRoute>
+                  <PaymentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/reports" element={
+                <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                  <ReportsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/appointments" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminAppointmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/patients" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPatientManagementPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/doctors" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/settings" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Layout>
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
         </Router>
       </NotificationProvider>
     </AuthProvider>

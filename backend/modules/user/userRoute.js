@@ -51,10 +51,20 @@ router.post(
   UserController.login
 );
 
+// Admin login route with Joi validation
+router.post(
+  "/admin/login",
+  validateRequest(loginSchema),
+  UserController.adminLogin
+);
+
 // User logout route
 router.post("/user/logout", UserController.logout);
 
 // Get doctors route
 router.get("/doctors", UserController.getDoctors);
+
+// Get patients route
+router.get("/patients", UserController.getPatients);
 
 export { router as userRoute };

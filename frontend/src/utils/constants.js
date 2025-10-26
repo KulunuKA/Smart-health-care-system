@@ -97,6 +97,7 @@ export const VALIDATION_RULES = {
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/user/login',
+    ADMIN_LOGIN: '/admin/login',
     LOGOUT: '/user/logout',
     REFRESH: '/user/refresh'
   },
@@ -110,7 +111,8 @@ export const API_ENDPOINTS = {
   },
   PATIENTS: {
     BASE: '/patients',
-    UPDATE: '/patients/update'
+    UPDATE: '/patients/update',
+    LIST: '/patients'
   },
   PAYMENTS: {
     UNPAID: '/payments/unpaid',
@@ -127,7 +129,9 @@ export const API_ENDPOINTS = {
   },
   ADMIN: {
     LOGS: '/admin/logs',
-    SCHEDULE: '/admin/schedule'
+    SCHEDULE: '/admin/schedule',
+    APPOINTMENTS: '/admin/appointments',
+    APPOINTMENTS_STATS: '/admin/appointments/stats'
   }
 };
 

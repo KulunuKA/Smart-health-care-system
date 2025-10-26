@@ -260,9 +260,11 @@ const AppointmentsPage = () => {
         setSelectedAppointment(null);
         // Refresh appointments list
         fetchAppointments();
+        alert("Appointment cancelled successfully!");
       } catch (error) {
         console.error("Error cancelling appointment:", error);
-        alert("Failed to cancel appointment. Please try again.");
+        const errorMessage = error.message || "Failed to cancel appointment. Please try again.";
+        alert(errorMessage);
       }
     }
   };
@@ -603,7 +605,7 @@ const AppointmentsPage = () => {
           onClose={() => setShowDeleteModal(false)}
           onConfirm={confirmDelete}
           title="Cancel Appointment"
-          message={`Are you sure you want to cancel the appointment with ${selectedAppointment?.patientName}?`}
+          message={`Are you sure you want to cancel the appointment with ${selectedAppointment?.doctorName} on ${selectedAppointment?.date} at ${selectedAppointment?.time}?`}
           confirmText="Cancel Appointment"
           confirmVariant="danger"
         />

@@ -68,6 +68,34 @@ class AuthService {
     }
   }
 
+
+  /**
+   * Sign up new user
+   * @param {object} userData - User registration data
+   * @returns {Promise<object>} - Registration response
+   */
+  async signUp(userData) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/user/signup`,
+        userData
+      );
+      
+      console.log('Raw backend response:', response.data);
+      
+      // Handle the backend response format
+      const { data } = response.data;
+      
+      return {
+        user: data,
+        token: data.accessToken
+      };
+    } catch (error) {
+      console.error('Signup error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Registration failed');
+    }
+  }
+
   /**
    * Logout user
    * @returns {Promise<void>}
