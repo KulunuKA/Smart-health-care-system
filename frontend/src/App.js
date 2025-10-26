@@ -21,6 +21,8 @@ import NotificationsPage from './pages/NotificationsPage';
 import AdminPage from './pages/AdminPage';
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage';
 import AdminPatientManagementPage from './pages/AdminPatientManagementPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 
 // Components
 import Layout from './components/common/Layout';
@@ -99,6 +101,10 @@ function App() {
                   <AdminPage />
                 </ProtectedRoute>
               } />
+              
+              {/* Payment Result Routes */}
+              <Route path="/payment-success" element={<PaymentSuccessPage />} />
+              <Route path="/payment-cancel" element={<PaymentCancelPage />} />
             </Routes>
           </Layout>
           <ToastContainer
