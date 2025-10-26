@@ -18,6 +18,7 @@ import {
 import Card from '../components/common/Card';
 import Loader from '../components/common/Loader';
 import Modal, { FormModal, ConfirmationModal } from '../components/common/Modal';
+import { appointmentService } from '../services/appointmentService';
 
 /**
  * Admin Patient Management Page Component
@@ -53,25 +54,89 @@ const AdminPatientManagementPage = () => {
     setFilteredPatients(filtered);
   }, [patients, searchTerm]);
 
+  // const fetchPatients = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/user/patients`, {
+  //       headers: {
+  //         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+  //         'Content-Type': 'application/json'
+  //       }
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to fetch patients');
+  //     }
+
+  //     const data = await response.json();
+  //     console.log('Fetched patients:', data);
+      
+  //     // Transform the data to match our expected format
+  //     const transformedPatients = data.data.map(patient => ({
+  //       id: patient._id,
+  //       firstName: patient.firstName,
+  //       lastName: patient.lastName,
+  //       email: patient.email,
+  //       name: `${patient.firstName} ${patient.lastName}`,
+  //       role: 'patient',
+  //       status: 'active',
+  //       lastLogin: new Date().toISOString(),
+  //       department: null
+  //     }));
+
+  //     setPatients(transformedPatients);
+  //   } catch (error) {
+  //     console.error('Error fetching patients:', error);
+  //     // Fallback to mock data for development
+  //     const mockPatients = [
+  //       {
+  //         id: 1,
+  //         firstName: 'John',
+  //         lastName: 'Doe',
+  //         email: 'john.doe@patient.com',
+  //         name: 'John Doe',
+  //         role: 'patient',
+  //         status: 'active',
+  //         lastLogin: '2024-12-09T14:20:00Z',
+  //         department: null
+  //       },
+  //       {
+  //         id: 2,
+  //         firstName: 'Jane',
+  //         lastName: 'Smith',
+  //         email: 'jane.smith@patient.com',
+  //         name: 'Jane Smith',
+  //         role: 'patient',
+  //         status: 'active',
+  //         lastLogin: '2024-12-08T10:15:00Z',
+  //         department: null
+  //       },
+  //       {
+  //         id: 3,
+  //         firstName: 'Bob',
+  //         lastName: 'Johnson',
+  //         email: 'bob.johnson@patient.com',
+  //         name: 'Bob Johnson',
+  //         role: 'patient',
+  //         status: 'active',
+  //         lastLogin: '2024-12-07T16:30:00Z',
+  //         department: null
+  //       }
+  //     ];
+  //     setPatients(mockPatients);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchPatients = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/user/patients`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch patients');
-      }
-
-      const data = await response.json();
-      console.log('Fetched patients:', data);
+      const response = await appointmentService.getPatients();
+      console.log('Fetched patients response:', response);
       
       // Transform the data to match our expected format
-      const transformedPatients = data.data.map(patient => ({
+      const transformedPatients = response.data.map(patient => ({
         id: patient._id,
         firstName: patient.firstName,
         lastName: patient.lastName,
@@ -85,44 +150,9 @@ const AdminPatientManagementPage = () => {
 
       setPatients(transformedPatients);
     } catch (error) {
-      console.error('Error fetching patients:', error);
-      // Fallback to mock data for development
-      const mockPatients = [
-        {
-          id: 1,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@patient.com',
-          name: 'John Doe',
-          role: 'patient',
-          status: 'active',
-          lastLogin: '2024-12-09T14:20:00Z',
-          department: null
-        },
-        {
-          id: 2,
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@patient.com',
-          name: 'Jane Smith',
-          role: 'patient',
-          status: 'active',
-          lastLogin: '2024-12-08T10:15:00Z',
-          department: null
-        },
-        {
-          id: 3,
-          firstName: 'Bob',
-          lastName: 'Johnson',
-          email: 'bob.johnson@patient.com',
-          name: 'Bob Johnson',
-          role: 'patient',
-          status: 'active',
-          lastLogin: '2024-12-07T16:30:00Z',
-          department: null
-        }
-      ];
-      setPatients(mockPatients);
+      console.error('Failed to fetch patients:', error);
+      // Set empty array on error to show no patients message
+      setPatients([]);
     } finally {
       setLoading(false);
     }
