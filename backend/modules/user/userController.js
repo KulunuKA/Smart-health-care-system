@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { MESSAGES } from "../../config/constants.js";
 import { UserDao } from "./userDao.js";
+import { UserModel } from "./userModel.js";
 import { responseHandler } from "../../utils/ResponseHandler.js";
 
 export class UserController {
@@ -51,6 +52,60 @@ export class UserController {
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
+      return responseHandler.sendError(res, error);
+    }
+  }
+
+  static async login(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      // Find user by credentials
+      const user = await UserModel.findByCredentials(email, password);
+      
+      // Generate auth token
+      const accessToken = await user.generateAuthToken();
+
+      const result = {
+        accessToken,
+        user: {
+          _id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role.toLowerCase(),
+          name: `${user.firstName} ${user.lastName}`
+        }
+      };
+
+      return responseHandler.sendSuccess(res, result, "Login successful");
+    } catch (error) {
+      return responseHandler.sendError(res, error);
+    }
+  }
+
+  static async logout(req, res) {
+    try {
+      // For now, just return success
+      // In a more sophisticated implementation, you might want to:
+      // - Blacklist the token
+      // - Remove the token from the user's tokens array
+      return responseHandler.sendSuccess(res, null, "Logout successful");
+    } catch (error) {
+      return responseHandler.sendError(res, error);
+    }
+  }
+
+  static async getDoctors(req, res) {
+    try {
+      // Get all users with role "Doctor"
+      const doctors = await UserModel.find({ role: "Doctor" })
+        .select('_id firstName lastName email specialty')
+        .sort({ firstName: 1 });
+
+      return responseHandler.sendSuccess(res, doctors, "Doctors retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
       return responseHandler.sendError(res, error);
     }
   }
