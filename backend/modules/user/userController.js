@@ -159,4 +159,28 @@ export class UserController {
       return responseHandler.sendError(res, error);
     }
   }
+
+  static async getUserById(req, res) {
+    try {
+      const { userId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return responseHandler.sendError(res, "Invalid user ID", 400);
+      }
+
+      // Get user by ID with all fields except password
+      const user = await UserModel.findById(userId)
+        .select('-password')
+        .lean();
+
+      if (!user) {
+        return responseHandler.sendNotFound(res, "User not found");
+      }
+
+      return responseHandler.sendSuccess(res, user, "User details retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return responseHandler.sendError(res, error);
+    }
+  }
 }

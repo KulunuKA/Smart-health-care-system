@@ -285,6 +285,23 @@ class AppointmentService {
   }
 
   /**
+   * Get user by ID
+   * @param {string} userId - User ID
+   * @returns {Promise<object>} - User details
+   */
+  async getUserById(userId) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/user/${userId}`
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch user details');
+    }
+  }
+
+  /**
    * Get appointment statistics (Admin only)
    * @param {object} filters - Filter parameters
    * @returns {Promise<object>} - Appointment statistics
