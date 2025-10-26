@@ -4,7 +4,7 @@
  */
 
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 // User Roles
 export const USER_ROLES = {
@@ -96,20 +96,23 @@ export const VALIDATION_RULES = {
 // API Endpoints
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh'
+    LOGIN: '/user/login',
+    ADMIN_LOGIN: '/admin/login',
+    LOGOUT: '/user/logout',
+    REFRESH: '/user/refresh'
   },
   APPOINTMENTS: {
     BASE: '/appointments',
     AVAILABLE: '/appointments/available',
     BOOK: '/appointments/book',
     UPDATE: '/appointments/update',
-    CANCEL: '/appointments/cancel'
+    CANCEL: '/appointments/cancel',
+    USER: '/appointments/user'
   },
   PATIENTS: {
     BASE: '/patients',
-    UPDATE: '/patients/update'
+    UPDATE: '/patients/update',
+    LIST: '/patients'
   },
   PAYMENTS: {
     UNPAID: '/payments/unpaid',
@@ -126,7 +129,9 @@ export const API_ENDPOINTS = {
   },
   ADMIN: {
     LOGS: '/admin/logs',
-    SCHEDULE: '/admin/schedule'
+    SCHEDULE: '/admin/schedule',
+    APPOINTMENTS: '/admin/appointments',
+    APPOINTMENTS_STATS: '/admin/appointments/stats'
   }
 };
 

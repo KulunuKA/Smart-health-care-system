@@ -15,6 +15,7 @@ import {
 import Card, { StatCard } from '../components/common/Card';
 import Loader from '../components/common/Loader';
 import Modal, { FormModal } from '../components/common/Modal';
+import { paymentService } from '../services/paymentService';
 
 /**
  * Payments Page Component
@@ -29,6 +30,13 @@ const PaymentsPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
+  const [paymentData, setPaymentData] = useState({
+    method: 'card',
+    amount: 0,
+    cardNumber: '',
+    expiryDate: '',
+    cvv: ''
+  });
 
   useEffect(() => {
     fetchPayments();
@@ -38,10 +46,24 @@ const PaymentsPage = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch real payment history from the backend
+      const data = await paymentService.getPaymentHistory(user?._id);
+      const payments = data.data.map(payment => ({
+        id: payment._id,
+        patientName: `${payment.userId.firstName} ${payment.userId.lastName}`,
+        amount: payment.amount,
+        date: new Date(payment.paidAt).toISOString().split('T')[0],
+        method: payment.paymentMethod === 'card' ? 'Credit Card' : 
+                payment.paymentMethod === 'bank' ? 'Bank Transfer' : 'Digital Wallet',
+        status: payment.status,
+        transactionId: payment.transactionId,
+        description: payment.appointmentId?.reason || 'Appointment fee'
+      }));
       
-      // Mock data
+      setPayments(payments);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      // Fallback to mock data
       const mockPayments = [
         {
           id: 1,
@@ -74,10 +96,7 @@ const PaymentsPage = () => {
           description: 'Consultation fee'
         }
       ];
-      
       setPayments(mockPayments);
-    } catch (error) {
-      console.error('Error fetching payments:', error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +104,24 @@ const PaymentsPage = () => {
 
   const fetchBills = async () => {
     try {
-      // Mock bills data
+      // Fetch real unpaid bills from the backend
+      const data = await paymentService.getUnpaidBills(user?._id);
+      const bills = data.data.map(bill => ({
+        id: bill._id,
+        patientName: `${bill.userId.firstName} ${bill.userId.lastName}`,
+        amount: bill.amount,
+        dueDate: new Date(bill.date).toISOString().split('T')[0],
+        status: bill.status,
+        description: bill.appointmentId?.reason || 'Appointment fee',
+        services: ['Appointment', 'Consultation'],
+        appointmentId: bill.appointmentId?._id,
+        doctorName: `Dr. ${bill.doctorId.firstName} ${bill.doctorId.lastName}`
+      }));
+      
+      setBills(bills);
+    } catch (error) {
+      console.error('Error fetching bills:', error);
+      // Fallback to mock data
       const mockBills = [
         {
           id: 1,
@@ -107,8 +143,6 @@ const PaymentsPage = () => {
         }
       ];
       setBills(mockBills);
-    } catch (error) {
-      console.error('Error fetching bills:', error);
     }
   };
 
@@ -140,13 +174,57 @@ const PaymentsPage = () => {
 
   const handlePayment = (bill) => {
     setSelectedBill(bill);
+    setPaymentData({
+      method: 'card',
+      amount: bill.amount,
+      cardNumber: '',
+      expiryDate: '',
+      cvv: ''
+    });
     setShowPaymentModal(true);
   };
 
-  const processPayment = (paymentData) => {
-    console.log('Processing payment:', paymentData);
-    setShowPaymentModal(false);
-    setSelectedBill(null);
+  const processPayment = async () => {
+    try {
+      // Validate required fields
+      if (!paymentData.method || !paymentData.amount || !paymentData.cardNumber || !paymentData.expiryDate || !paymentData.cvv) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      const paymentPayload = {
+        billId: selectedBill.id,
+        paymentMethod: paymentData.method,
+        amount: paymentData.amount,
+        paymentDetails: {
+          cardNumber: paymentData.cardNumber,
+          expiryDate: paymentData.expiryDate,
+          cvv: paymentData.cvv
+        }
+      };
+
+      const result = await paymentService.processPayment(paymentPayload);
+      console.log('Payment processed successfully:', result);
+      
+      setShowPaymentModal(false);
+      setSelectedBill(null);
+      setPaymentData({
+        method: 'card',
+        amount: 0,
+        cardNumber: '',
+        expiryDate: '',
+        cvv: ''
+      });
+      
+      // Refresh data
+      fetchPayments();
+      fetchBills();
+      
+      alert('Payment processed successfully!');
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      alert('Payment failed. Please try again.');
+    }
   };
 
   const totalRevenue = payments
@@ -372,7 +450,17 @@ const PaymentsPage = () => {
         {/* Payment Modal */}
         <FormModal
           isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedBill(null);
+            setPaymentData({
+              method: 'card',
+              amount: 0,
+              cardNumber: '',
+              expiryDate: '',
+              cvv: ''
+            });
+          }}
           onSubmit={processPayment}
           title="Process Payment"
           size="lg"
@@ -387,38 +475,65 @@ const PaymentsPage = () => {
               </div>
 
               <div>
-                <label className="label">Payment Method</label>
-                <select className="input-field">
-                  <option>Credit Card</option>
-                  <option>Bank Transfer</option>
-                  <option>Digital Wallet</option>
-                  <option>Cash</option>
+                <label className="label">Payment Method *</label>
+                <select 
+                  className="input-field"
+                  value={paymentData.method}
+                  onChange={(e) => setPaymentData({...paymentData, method: e.target.value})}
+                  required
+                >
+                  <option value="card">Credit Card</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="wallet">Digital Wallet</option>
                 </select>
               </div>
 
               <div>
-                <label className="label">Card Number</label>
-                <input type="text" className="input-field" placeholder="1234 5678 9012 3456" />
+                <label className="label">Card Number *</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  placeholder="1234 5678 9012 3456"
+                  value={paymentData.cardNumber}
+                  onChange={(e) => setPaymentData({...paymentData, cardNumber: e.target.value})}
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Expiry Date</label>
-                  <input type="text" className="input-field" placeholder="MM/YY" />
+                  <label className="label">Expiry Date *</label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="MM/YY"
+                    value={paymentData.expiryDate}
+                    onChange={(e) => setPaymentData({...paymentData, expiryDate: e.target.value})}
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="label">CVV</label>
-                  <input type="text" className="input-field" placeholder="123" />
+                  <label className="label">CVV *</label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="123"
+                    value={paymentData.cvv}
+                    onChange={(e) => setPaymentData({...paymentData, cvv: e.target.value})}
+                    required
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="label">Amount to Pay</label>
+                <label className="label">Amount to Pay *</label>
                 <input 
                   type="number" 
                   className="input-field" 
-                  defaultValue={selectedBill.amount}
+                  value={paymentData.amount}
+                  onChange={(e) => setPaymentData({...paymentData, amount: parseFloat(e.target.value) || 0})}
                   step="0.01"
+                  required
                 />
               </div>
             </div>

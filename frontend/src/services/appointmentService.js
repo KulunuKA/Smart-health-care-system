@@ -37,7 +37,7 @@ class AppointmentService {
   async getUserAppointments(userId, filters = {}) {
     try {
       const response = await axios.get(
-        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.BASE}/user/${userId}`,
+        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.USER}/${userId}`,
         { params: filters }
       );
       
@@ -110,7 +110,7 @@ class AppointmentService {
   async cancelAppointment(appointmentId, reason) {
     try {
       await axios.delete(
-        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.CANCEL}/${appointmentId}`,
+        `${this.baseURL}${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
         { data: { reason } }
       );
     } catch (error) {
@@ -176,6 +176,22 @@ class AppointmentService {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch available time slots');
+    }
+  }
+
+  /**
+   * Get patients list
+   * @returns {Promise<Array>} - Patients list
+   */
+  async getPatients() {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}${API_ENDPOINTS.PATIENTS.LIST}`
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch patients');
     }
   }
 
@@ -247,6 +263,42 @@ class AppointmentService {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to search appointments');
+    }
+  }
+
+  /**
+   * Get all appointments (Admin only)
+   * @param {object} filters - Filter parameters
+   * @returns {Promise<object>} - All appointments with pagination
+   */
+  async getAllAppointments(filters = {}) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}${API_ENDPOINTS.ADMIN.APPOINTMENTS}`,
+        { params: filters }
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch all appointments');
+    }
+  }
+
+  /**
+   * Get appointment statistics (Admin only)
+   * @param {object} filters - Filter parameters
+   * @returns {Promise<object>} - Appointment statistics
+   */
+  async getAdminAppointmentStats(filters = {}) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}${API_ENDPOINTS.ADMIN.APPOINTMENTS_STATS}`,
+        { params: filters }
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch appointment statistics');
     }
   }
 }

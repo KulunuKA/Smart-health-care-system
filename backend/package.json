@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "cross-env STRIPE_SECRETE_KEY=sk_test_51SMHYuRdySyDI9XchRsKQOVRBQsaZQWWO91b7BIFwRnvZisjo7Cjln8dDfSMaLUU6a0YBSQF319oawYas8kMH2P600arfVFAAH node server.js"
   },
   "keywords": [],
   "author": "",
@@ -16,12 +16,14 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.5",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "stripe": "^19.1.0"
   }
 }
