@@ -4,7 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --coverage",
     "dev": "nodemon server.js",
     "start": "cross-env STRIPE_SECRETE_KEY=sk_test_51SMHYuRdySyDI9XchRsKQOVRBQsaZQWWO91b7BIFwRnvZisjo7Cjln8dDfSMaLUU6a0YBSQF319oawYas8kMH2P600arfVFAAH node server.js"
   },
@@ -25,5 +25,11 @@
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.10",
     "stripe": "^19.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0"
   }
 }
