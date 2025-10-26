@@ -3,122 +3,164 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   FileText, 
   Search, 
-  Plus, 
-  Download, 
   Eye, 
-  Edit,
-  Trash2,
   User,
   Calendar,
   AlertTriangle,
-  Shield
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import Card from '../components/common/Card';
 import Loader from '../components/common/Loader';
-import Modal, { FormModal } from '../components/common/Modal';
+import Modal from '../components/common/Modal';
+import { appointmentService } from '../services/appointmentService';
 
 /**
  * Records Page Component
- * Manage patient records and medical history
+ * View patient medical records and history (read-only for patients)
  */
 const RecordsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [records, setRecords] = useState([]);
+  const [medicalHistory, setMedicalHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showRecordModal, setShowRecordModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchRecords();
-  }, []);
+    console.log('RecordsPage useEffect - user:', user);
+    if (user) {
+      console.log('User role:', user.role);
+      if (user.role === 'Patient' || user.role === 'patient') {
+        fetchMedicalRecords();
+      } else {
+        setError('This page is only accessible to patients');
+        setLoading(false);
+      }
+    } else {
+      setError('Please log in to view your medical records');
+      setLoading(false);
+    }
+  }, [user]);
 
-  const fetchRecords = async () => {
+  const fetchMedicalRecords = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Fetching medical records for user:', user);
+      console.log('User ID:', user._id);
       
-      // Mock data
-      const mockRecords = [
-        {
-          id: 1,
-          patientName: 'John Doe',
-          patientId: 'P001',
-          healthCardNumber: 'HC123456789',
-          dateOfBirth: '1985-03-15',
-          gender: 'Male',
-          bloodType: 'O+',
-          allergies: ['Penicillin', 'Shellfish'],
-          medications: ['Metformin', 'Lisinopril'],
-          lastVisit: '2024-11-20',
-          status: 'active'
-        },
-        {
-          id: 2,
-          patientName: 'Jane Smith',
-          patientId: 'P002',
-          healthCardNumber: 'HC987654321',
-          dateOfBirth: '1990-07-22',
-          gender: 'Female',
-          bloodType: 'A+',
-          allergies: ['Latex'],
-          medications: ['Vitamin D', 'Iron Supplement'],
-          lastVisit: '2024-12-01',
-          status: 'active'
-        },
-        {
-          id: 3,
-          patientName: 'Bob Wilson',
-          patientId: 'P003',
-          healthCardNumber: 'HC456789123',
-          dateOfBirth: '1978-12-10',
-          gender: 'Male',
-          bloodType: 'B+',
-          allergies: [],
-          medications: ['Aspirin'],
-          lastVisit: '2024-10-15',
-          status: 'inactive'
-        }
-      ];
-      
-      setRecords(mockRecords);
+      // For testing, let's add some mock data if the API fails
+      try {
+        const response = await appointmentService.getMedicalHistory(user._id);
+        console.log('Fetched medical records response:', response);
+        
+        // Transform the medical history data to match our frontend format
+        const transformedHistory = response.data.map(record => ({
+          id: record._id,
+          date: record.date || record.createdAt,
+          type: record.recordType,
+          title: record.title,
+          doctor: record.doctor ? `${record.doctor.firstName} ${record.doctor.lastName}` : 'Unknown Doctor',
+          status: 'Completed',
+          notes: record.description,
+          diagnosis: record.diagnosis,
+          treatment: record.treatment,
+          followUpRequired: record.followUpRequired,
+          followUpDate: record.followUpDate
+        }));
+
+        console.log('Transformed medical history:', transformedHistory);
+        setMedicalHistory(transformedHistory);
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        console.log('Using mock data for testing...');
+        
+        // Mock data for testing
+        const mockHistory = [
+          {
+            id: '1',
+            date: new Date('2024-01-15'),
+            type: 'consultation',
+            title: 'Annual Checkup',
+            doctor: 'Dr. Smith',
+            status: 'Completed',
+            notes: 'Regular annual health checkup. Patient is in good health.',
+            diagnosis: 'Healthy',
+            treatment: 'Continue current lifestyle',
+            followUpRequired: false,
+            followUpDate: null
+          },
+          {
+            id: '2',
+            date: new Date('2024-02-20'),
+            type: 'diagnosis',
+            title: 'Blood Test Results',
+            doctor: 'Dr. Johnson',
+            status: 'Completed',
+            notes: 'Complete blood count and metabolic panel results.',
+            diagnosis: 'Normal blood values',
+            treatment: 'No treatment required',
+            followUpRequired: true,
+            followUpDate: new Date('2024-05-20')
+          }
+        ];
+        
+        setMedicalHistory(mockHistory);
+        setError('Using mock data - API connection issue: ' + apiError.message);
+      }
     } catch (error) {
-      console.error('Error fetching records:', error);
+      console.error('Failed to fetch medical records:', error);
+      console.error('Error details:', error.message);
+      setError(error.message);
+      setMedicalHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRecords = records.filter(record =>
-    record.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.healthCardNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'archived': return 'bg-yellow-100 text-yellow-800';
+      case 'Completed': return 'bg-green-100 text-green-800';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleEditRecord = (record) => {
-    setSelectedRecord(record);
-    setShowEditModal(true);
+  const getRecordTypeIcon = (type) => {
+    switch (type) {
+      case 'consultation': return <User className="w-4 h-4" />;
+      case 'diagnosis': return <AlertTriangle className="w-4 h-4" />;
+      case 'treatment': return <CheckCircle className="w-4 h-4" />;
+      case 'prescription': return <FileText className="w-4 h-4" />;
+      case 'lab_result': return <FileText className="w-4 h-4" />;
+      case 'vital_signs': return <Clock className="w-4 h-4" />;
+      case 'allergy': return <XCircle className="w-4 h-4" />;
+      case 'medication': return <FileText className="w-4 h-4" />;
+      case 'surgery': return <AlertTriangle className="w-4 h-4" />;
+      default: return <FileText className="w-4 h-4" />;
+    }
   };
 
-  const handleDeleteRecord = (recordId) => {
-    setRecords(prev => prev.filter(record => record.id !== recordId));
+  const handleViewRecord = (record) => {
+    setSelectedRecord(record);
+    setShowRecordModal(true);
   };
+
+  const filteredRecords = medicalHistory.filter(record =>
+    record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (record.diagnosis && record.diagnosis.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader size="lg" text="Loading patient records..." />
+        <Loader size="lg" text="Loading your medical records..." />
       </div>
     );
   }
@@ -129,16 +171,14 @@ const RecordsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Patient Records</h1>
-            <p className="text-gray-600 mt-2">Manage patient medical records and history</p>
+            <h1 className="text-3xl font-bold text-gray-900">My Medical Records</h1>
+            <p className="text-gray-600 mt-2">View your complete medical history and records</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary mt-4 sm:mt-0 flex items-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Record
-          </button>
+          <div className="mt-4 sm:mt-0 flex items-center gap-4">
+            <span className="text-sm text-gray-500">
+              Total Records: {medicalHistory.length}
+            </span>
+          </div>
         </div>
 
         {/* Search */}
@@ -147,275 +187,217 @@ const RecordsPage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by patient name, ID, or health card number..."
+              placeholder="Search records by title, doctor, type, or diagnosis..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </Card>
 
+        {/* Error Display */}
+        {error && (
+          <Card className="p-6 mb-8 border-red-200 bg-red-50">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Error loading medical records</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <button
+                  onClick={fetchMedicalRecords}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Records List */}
         <div className="space-y-4">
-          {filteredRecords.length === 0 ? (
-            <Card className="p-8 text-center">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No records found</h3>
-              <p className="text-gray-600">Try adjusting your search criteria.</p>
-            </Card>
-          ) : (
+          {filteredRecords.length > 0 ? (
             filteredRecords.map((record) => (
-              <Card key={record.id} className="p-6">
+              <Card key={record.id} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-primary-600" />
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                        {getRecordTypeIcon(record.type)}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {record.patientName}
-                        </h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">{record.title}</h3>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
                           {record.status}
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Patient ID:</span>
-                          <p className="font-medium">{record.patientId}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span>{new Date(record.date).toLocaleDateString()}</span>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Health Card:</span>
-                          <p className="font-medium">{record.healthCardNumber}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">DOB:</span>
-                          <p className="font-medium">{record.dateOfBirth}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Blood Type:</span>
-                          <p className="font-medium">{record.bloodType}</p>
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span>{record.doctor}</span>
                         </div>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-gray-500">Allergies:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {record.allergies.length > 0 ? (
-                              record.allergies.map((allergy, index) => (
-                                <span key={index} className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                                  {allergy}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-gray-400 text-sm">None</span>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-500">Current Medications:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {record.medications.map((medication, index) => (
-                              <span key={index} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                {medication}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            Last Visit: {record.lastVisit}
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                        <span className="bg-gray-100 px-2 py-1 rounded-full">
+                          {record.type.replace('_', ' ').toUpperCase()}
+                        </span>
+                        {record.followUpRequired && (
+                          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                            Follow-up Required
                           </span>
-                          <div className="flex space-x-2">
-                            <button className="text-primary-600 hover:text-primary-700 text-sm">
-                              <Eye className="w-4 h-4 mr-1" />
-                              View Details
-                            </button>
-                            <button 
-                              onClick={() => handleEditRecord(record)}
-                              className="text-gray-600 hover:text-gray-700 text-sm"
-                            >
-                              <Edit className="w-4 h-4 mr-1" />
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteRecord(record.id)}
-                              className="text-red-600 hover:text-red-700 text-sm"
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
+
+                      {record.diagnosis && (
+                        <p className="text-sm text-gray-700 mb-2">
+                          <strong>Diagnosis:</strong> {record.diagnosis}
+                        </p>
+                      )}
+
+                      {record.treatment && (
+                        <p className="text-sm text-gray-700 mb-3">
+                          <strong>Treatment:</strong> {record.treatment}
+                        </p>
+                      )}
+
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {record.notes}
+                      </p>
                     </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleViewRecord(record)}
+                      className="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                    >
+                      <Eye className="w-3 h-3" />
+                      View Details
+                    </button>
                   </div>
                 </div>
               </Card>
             ))
-          )}
+          ) : !error ? (
+            <Card className="p-12 text-center">
+              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? 'No records found' : 'No medical records yet'}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm 
+                  ? 'Try adjusting your search terms' 
+                  : 'Your medical records will appear here once they are added by healthcare providers'
+                }
+              </p>
+            </Card>
+          ) : null}
         </div>
 
-        {/* Add Record Modal */}
-        <FormModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSubmit={(data) => {
-            console.log('Add record:', data);
-            setShowAddModal(false);
-          }}
-          title="Add New Patient Record"
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">First Name</label>
-                <input type="text" className="input-field" placeholder="Enter first name" />
-              </div>
-              <div>
-                <label className="label">Last Name</label>
-                <input type="text" className="input-field" placeholder="Enter last name" />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Date of Birth</label>
-                <input type="date" className="input-field" />
-              </div>
-              <div>
-                <label className="label">Gender</label>
-                <select className="input-field">
-                  <option>Select Gender</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Health Card Number</label>
-              <input type="text" className="input-field" placeholder="Enter health card number" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Blood Type</label>
-                <select className="input-field">
-                  <option>Select Blood Type</option>
-                  <option>A+</option>
-                  <option>A-</option>
-                  <option>B+</option>
-                  <option>B-</option>
-                  <option>AB+</option>
-                  <option>AB-</option>
-                  <option>O+</option>
-                  <option>O-</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Patient ID</label>
-                <input type="text" className="input-field" placeholder="Auto-generated" disabled />
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Allergies (comma-separated)</label>
-              <input type="text" className="input-field" placeholder="e.g., Penicillin, Shellfish" />
-            </div>
-
-            <div>
-              <label className="label">Current Medications (comma-separated)</label>
-              <input type="text" className="input-field" placeholder="e.g., Metformin, Lisinopril" />
-            </div>
-          </div>
-        </FormModal>
-
-        {/* Edit Record Modal */}
-        <FormModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSubmit={(data) => {
-            console.log('Edit record:', data);
-            setShowEditModal(false);
+        {/* Record Details Modal */}
+        <Modal
+          isOpen={showRecordModal}
+          onClose={() => {
+            setShowRecordModal(false);
             setSelectedRecord(null);
           }}
-          title="Edit Patient Record"
+          title="Medical Record Details"
           size="lg"
         >
           {selectedRecord && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-start justify-between">
                 <div>
-                  <label className="label">Patient Name</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
-                    defaultValue={selectedRecord.patientName}
-                  />
+                  <h3 className="text-xl font-semibold text-gray-900">{selectedRecord.title}</h3>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                    <span className="flex items-center space-x-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(selectedRecord.date).toLocaleDateString()}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <User className="w-4 h-4" />
+                      <span>{selectedRecord.doctor}</span>
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <label className="label">Health Card Number</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
-                    defaultValue={selectedRecord.healthCardNumber}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Blood Type</label>
-                  <select className="input-field" defaultValue={selectedRecord.bloodType}>
-                    <option>A+</option>
-                    <option>A-</option>
-                    <option>B+</option>
-                    <option>B-</option>
-                    <option>AB+</option>
-                    <option>AB-</option>
-                    <option>O+</option>
-                    <option>O-</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Status</label>
-                  <select className="input-field" defaultValue={selectedRecord.status}>
-                    <option>active</option>
-                    <option>inactive</option>
-                    <option>archived</option>
-                  </select>
-                </div>
+                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(selectedRecord.status)}`}>
+                  {selectedRecord.status}
+                </span>
               </div>
 
-              <div>
-                <label className="label">Allergies</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  defaultValue={selectedRecord.allergies.join(', ')}
-                />
+              {/* Record Type */}
+              <div className="flex items-center space-x-2">
+                <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {selectedRecord.type.replace('_', ' ').toUpperCase()}
+                </span>
+                {selectedRecord.followUpRequired && (
+                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                    Follow-up Required
+                  </span>
+                )}
               </div>
 
+              {/* Description */}
               <div>
-                <label className="label">Medications</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  defaultValue={selectedRecord.medications.join(', ')}
-                />
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Description</h4>
+                <p className="text-gray-700">{selectedRecord.notes}</p>
+              </div>
+
+              {/* Diagnosis */}
+              {selectedRecord.diagnosis && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Diagnosis</h4>
+                  <p className="text-gray-700">{selectedRecord.diagnosis}</p>
+                </div>
+              )}
+
+              {/* Treatment */}
+              {selectedRecord.treatment && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Treatment</h4>
+                  <p className="text-gray-700">{selectedRecord.treatment}</p>
+                </div>
+              )}
+
+              {/* Follow-up */}
+              {selectedRecord.followUpRequired && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Follow-up</h4>
+                  <p className="text-gray-700">
+                    {selectedRecord.followUpDate 
+                      ? `Scheduled for ${new Date(selectedRecord.followUpDate).toLocaleDateString()}`
+                      : 'Follow-up required - please contact your healthcare provider'
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setShowRecordModal(false);
+                    setSelectedRecord(null);
+                  }}
+                  className="btn-secondary"
+                >
+                  Close
+                </button>
               </div>
             </div>
           )}
-        </FormModal>
+        </Modal>
       </div>
     </div>
   );
