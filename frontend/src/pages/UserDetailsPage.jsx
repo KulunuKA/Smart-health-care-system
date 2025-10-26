@@ -46,6 +46,8 @@ const UserDetailsPage = () => {
   const [medicalHistory, setMedicalHistory] = useState([]);
   const [medicalHistoryLoading, setMedicalHistoryLoading] = useState(false);
   const [showAddMedicalRecordModal, setShowAddMedicalRecordModal] = useState(false);
+  const [showEditMedicalRecordModal, setShowEditMedicalRecordModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [doctorsLoading, setDoctorsLoading] = useState(false);
   const [medicalRecordData, setMedicalRecordData] = useState({
@@ -169,6 +171,68 @@ const UserDetailsPage = () => {
     }
   };
 
+  const handleUpdateMedicalRecord = async () => {
+    try {
+      // Prepare the medical record update data for the backend
+      const updateData = {};
+
+      // Only include fields that have been changed
+      if (medicalRecordData.recordType) updateData.recordType = medicalRecordData.recordType;
+      if (medicalRecordData.title) updateData.title = medicalRecordData.title;
+      if (medicalRecordData.description) updateData.description = medicalRecordData.description;
+      if (medicalRecordData.doctorId) updateData.doctor = medicalRecordData.doctorId;
+
+      // Only add optional fields if they have values
+      if (medicalRecordData.diagnosis && medicalRecordData.diagnosis.trim()) {
+        updateData.diagnosis = medicalRecordData.diagnosis.trim();
+      }
+
+      if (medicalRecordData.treatment && medicalRecordData.treatment.trim()) {
+        updateData.treatment = medicalRecordData.treatment.trim();
+      }
+
+      if (medicalRecordData.followUpRequired !== undefined) {
+        updateData.followUpRequired = medicalRecordData.followUpRequired;
+        if (medicalRecordData.followUpDate) {
+          updateData.followUpDate = medicalRecordData.followUpDate;
+        }
+      }
+
+      if (medicalRecordData.notes && medicalRecordData.notes.trim()) {
+        updateData.notes = medicalRecordData.notes.trim();
+      }
+
+      const response = await appointmentService.updateMedicalRecord(userId, editingRecord.id, updateData);
+      
+      // Refresh medical history
+      await fetchMedicalHistory();
+      
+      // Reset form and close modal
+      setMedicalRecordData({
+        recordType: '',
+        title: '',
+        description: '',
+        diagnosis: '',
+        symptoms: [],
+        treatment: '',
+        medications: [],
+        vitalSigns: {},
+        labResults: [],
+        followUpRequired: false,
+        followUpDate: '',
+        notes: '',
+        doctorId: ''
+      });
+      setEditingRecord(null);
+      setShowEditMedicalRecordModal(false);
+      
+      alert('Medical record updated successfully!');
+    } catch (error) {
+      console.error('Error updating medical record:', error);
+      alert('Error updating medical record: ' + error.message);
+    }
+  };
+
   const handleEditUser = () => {
     setEditData({
       firstName: userDetails.firstName,
@@ -228,6 +292,27 @@ const UserDetailsPage = () => {
 
   const handleAddMedicalRecord = () => {
     setShowAddMedicalRecordModal(true);
+    fetchDoctors(); // Fetch doctors when modal opens
+  };
+
+  const handleEditMedicalRecord = (record) => {
+    setEditingRecord(record);
+    setMedicalRecordData({
+      recordType: record.type || '',
+      title: record.title || '',
+      description: record.notes || '',
+      diagnosis: record.diagnosis || '',
+      symptoms: [],
+      treatment: record.treatment || '',
+      medications: [],
+      vitalSigns: {},
+      labResults: [],
+      followUpRequired: record.followUpRequired || false,
+      followUpDate: record.followUpDate || '',
+      notes: record.notes || '',
+      doctorId: record.doctorId || ''
+    });
+    setShowEditMedicalRecordModal(true);
     fetchDoctors(); // Fetch doctors when modal opens
   };
 
@@ -562,9 +647,18 @@ const UserDetailsPage = () => {
                   <div key={record.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-gray-900">{record.title}</h4>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
+                          {record.status}
+                        </span>
+                        <button
+                          onClick={() => handleEditMedicalRecord(record)}
+                          className="btn-secondary text-xs px-2 py-1 flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                          Edit
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                       <div>
@@ -1114,6 +1208,200 @@ const UserDetailsPage = () => {
               disabled={!medicalRecordData.recordType || !medicalRecordData.title || !medicalRecordData.description || !medicalRecordData.doctorId}
             >
               Add Medical Record
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Medical Record Modal */}
+      <Modal
+        isOpen={showEditMedicalRecordModal}
+        onClose={() => {
+          setShowEditMedicalRecordModal(false);
+          setEditingRecord(null);
+          setMedicalRecordData({
+            recordType: '',
+            title: '',
+            description: '',
+            diagnosis: '',
+            symptoms: [],
+            treatment: '',
+            medications: [],
+            vitalSigns: {},
+            labResults: [],
+            followUpRequired: false,
+            followUpDate: '',
+            notes: '',
+            doctorId: ''
+          });
+        }}
+        title="Edit Medical Record"
+        size="xl"
+      >
+        <div className="space-y-6">
+          {/* Record Type and Title */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Record Type</label>
+              <select 
+                className="input-field"
+                value={medicalRecordData.recordType}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, recordType: e.target.value }))}
+              >
+                <option value="">Select record type</option>
+                <option value="consultation">Consultation</option>
+                <option value="diagnosis">Diagnosis</option>
+                <option value="treatment">Treatment</option>
+                <option value="prescription">Prescription</option>
+                <option value="lab_result">Lab Result</option>
+                <option value="vital_signs">Vital Signs</option>
+                <option value="allergy">Allergy</option>
+                <option value="medication">Medication</option>
+                <option value="surgery">Surgery</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Title</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={medicalRecordData.title}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter record title"
+              />
+            </div>
+          </div>
+
+          {/* Doctor Selection */}
+          <div>
+            <label className="label">Doctor/Laboratory</label>
+            {doctorsLoading ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader size="sm" text="Loading doctors..." />
+              </div>
+            ) : (
+              <select 
+                className="input-field"
+                value={medicalRecordData.doctorId}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, doctorId: e.target.value }))}
+              >
+                <option value="">Select doctor or laboratory</option>
+                {doctors.map((doctor) => (
+                  <option key={doctor._id} value={doctor._id}>
+                    {doctor.firstName} {doctor.lastName} - {doctor.specialization || 'General Practice'}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="label">Description</label>
+            <textarea 
+              className="input-field" 
+              rows={4}
+              value={medicalRecordData.description}
+              onChange={(e) => setMedicalRecordData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Enter detailed description"
+            />
+          </div>
+
+          {/* Diagnosis and Treatment */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Diagnosis</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={medicalRecordData.diagnosis}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, diagnosis: e.target.value }))}
+                placeholder="Enter diagnosis"
+              />
+            </div>
+            <div>
+              <label className="label">Treatment</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={medicalRecordData.treatment}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, treatment: e.target.value }))}
+                placeholder="Enter treatment"
+              />
+            </div>
+          </div>
+
+          {/* Follow-up */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  className="mr-2"
+                  checked={medicalRecordData.followUpRequired}
+                  onChange={(e) => setMedicalRecordData(prev => ({ ...prev, followUpRequired: e.target.checked }))}
+                />
+                Follow-up Required
+              </label>
+            </div>
+            {medicalRecordData.followUpRequired && (
+              <div>
+                <label className="label">Follow-up Date</label>
+                <input 
+                  type="date" 
+                  className="input-field" 
+                  value={medicalRecordData.followUpDate}
+                  onChange={(e) => setMedicalRecordData(prev => ({ ...prev, followUpDate: e.target.value }))}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="label">Additional Notes</label>
+            <textarea 
+              className="input-field" 
+              rows={3}
+              value={medicalRecordData.notes}
+              onChange={(e) => setMedicalRecordData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Enter any additional notes"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              onClick={() => {
+                setShowEditMedicalRecordModal(false);
+                setEditingRecord(null);
+                setMedicalRecordData({
+                  recordType: '',
+                  title: '',
+                  description: '',
+                  diagnosis: '',
+                  symptoms: [],
+                  treatment: '',
+                  medications: [],
+                  vitalSigns: {},
+                  labResults: [],
+                  followUpRequired: false,
+                  followUpDate: '',
+                  notes: '',
+                  doctorId: ''
+                });
+              }}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateMedicalRecord}
+              className="btn-primary"
+              disabled={!medicalRecordData.title || !medicalRecordData.description}
+            >
+              Update Medical Record
             </button>
           </div>
         </div>

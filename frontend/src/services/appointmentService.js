@@ -340,6 +340,26 @@ class AppointmentService {
   }
 
   /**
+   * Update medical record for a patient
+   * @param {string} patientId - Patient ID
+   * @param {string} recordId - Medical record ID
+   * @param {object} updateData - Medical record update data
+   * @returns {Promise<object>} - Updated medical record
+   */
+  async updateMedicalRecord(patientId, recordId, updateData) {
+    try {
+      const response = await axios.put(
+        `${this.baseURL}/${patientId}/records/${recordId}`,
+        updateData
+      );
+      
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update medical record');
+    }
+  }
+
+  /**
    * Get appointment statistics (Admin only)
    * @param {object} filters - Filter parameters
    * @returns {Promise<object>} - Appointment statistics

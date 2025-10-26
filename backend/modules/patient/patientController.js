@@ -247,12 +247,36 @@ export class PatientController {
         return responseHandler.sendError(res, "Invalid patient or record ID", 400);
       }
 
-      const updatedPatient = await PatientDao.updateMedicalRecord(patientId, recordId, updateData, session);
+      // First, find the PatientModel by the 'user' field (same logic as addMedicalRecord and getMedicalHistory)
+      let patient = await PatientDao.getPatientByUserId(patientId);
+      
+      if (!patient) {
+        // If no PatientModel exists, check if user exists
+        const user = await UserModel.findById(patientId);
+        if (!user) {
+          await session.abortTransaction();
+          session.endSession();
+          return responseHandler.sendNotFound(res, "User not found");
+        }
+
+        if (user.role !== 'Patient') {
+          await session.abortTransaction();
+          session.endSession();
+          return responseHandler.sendError(res, "User is not a patient", 400);
+        }
+
+        await session.abortTransaction();
+        session.endSession();
+        return responseHandler.sendNotFound(res, "Patient record not found");
+      }
+
+      // Now update the medical record using the PatientModel._id
+      const updatedPatient = await PatientDao.updateMedicalRecord(patient._id, recordId, updateData, session);
 
       if (!updatedPatient) {
         await session.abortTransaction();
         session.endSession();
-        return responseHandler.sendNotFound(res, "Patient or medical record not found");
+        return responseHandler.sendNotFound(res, "Medical record not found");
       }
 
       await session.commitTransaction();
