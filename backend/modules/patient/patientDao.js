@@ -113,22 +113,27 @@ export class PatientDao {
    */
   static async updateMedicalRecord(patientId, recordId, updateData, session) {
     try {
+      // Build the update object dynamically based on provided fields
+      const updateFields = {};
+      
+      // Only update fields that are provided in updateData
+      if (updateData.title !== undefined) updateFields['medicalHistory.$.title'] = updateData.title;
+      if (updateData.description !== undefined) updateFields['medicalHistory.$.description'] = updateData.description;
+      if (updateData.diagnosis !== undefined) updateFields['medicalHistory.$.diagnosis'] = updateData.diagnosis;
+      if (updateData.treatment !== undefined) updateFields['medicalHistory.$.treatment'] = updateData.treatment;
+      if (updateData.notes !== undefined) updateFields['medicalHistory.$.notes'] = updateData.notes;
+      if (updateData.status !== undefined) updateFields['medicalHistory.$.status'] = updateData.status;
+      if (updateData.followUpRequired !== undefined) updateFields['medicalHistory.$.followUpRequired'] = updateData.followUpRequired;
+      if (updateData.followUpDate !== undefined) updateFields['medicalHistory.$.followUpDate'] = updateData.followUpDate;
+      if (updateData.doctor !== undefined) updateFields['medicalHistory.$.doctor'] = updateData.doctor;
+
       return await PatientModel.findOneAndUpdate(
         { 
           _id: patientId, 
           'medicalHistory._id': recordId 
         },
         { 
-          $set: { 
-            'medicalHistory.$.title': updateData.title,
-            'medicalHistory.$.description': updateData.description,
-            'medicalHistory.$.diagnosis': updateData.diagnosis,
-            'medicalHistory.$.treatment': updateData.treatment,
-            'medicalHistory.$.notes': updateData.notes,
-            'medicalHistory.$.status': updateData.status,
-            'medicalHistory.$.followUpRequired': updateData.followUpRequired,
-            'medicalHistory.$.followUpDate': updateData.followUpDate
-          }
+          $set: updateFields
         },
         { new: true, session }
       ).populate('user', 'email firstName lastName')

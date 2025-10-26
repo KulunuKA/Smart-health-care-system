@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
 import { 
@@ -26,6 +27,7 @@ import { appointmentService } from '../services/appointmentService';
  */
 const AdminPatientManagementPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
@@ -221,8 +223,8 @@ const AdminPatientManagementPage = () => {
   };
 
   const handleViewPatient = (patient) => {
-    // For now, just show patient details in an alert
-    alert(`Patient Details:\nName: ${patient.name}\nEmail: ${patient.email}\nRole: ${patient.role}`);
+    // Navigate to user details page
+    navigate(`/admin/user-details/${patient.id}`);
   };
 
   if (loading) {
