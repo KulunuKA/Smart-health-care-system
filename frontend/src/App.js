@@ -21,6 +21,8 @@ import NotificationsPage from './pages/NotificationsPage';
 import AdminPage from './pages/AdminPage';
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage';
 import AdminPatientManagementPage from './pages/AdminPatientManagementPage';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import ReportsManagement from './pages/ReportsManagement';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import UserDetailsPage from './pages/UserDetailsPage';
@@ -105,6 +107,16 @@ function App() {
               <Route path="/admin/settings" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/analytics" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AnalyticsDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/reports" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ReportsManagement />
                 </ProtectedRoute>
               } />
               

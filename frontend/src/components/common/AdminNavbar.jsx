@@ -11,7 +11,8 @@ import {
   Stethoscope,
   Settings,
   Shield,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 /**
@@ -41,7 +42,8 @@ const AdminNavbar = () => {
   const regularMenuItems = [
     // { name: 'User Dashboard', path: '/dashboard', icon: Home },
     // { name: 'Appointments', path: '/appointments', icon: Calendar },
-    { name: 'Reports', path: '/reports', icon: BarChart3 },
+    { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
+    { name: 'Reports', path: '/admin/reports', icon: FileText },
   ];
 
   const isActivePath = (path) => {
